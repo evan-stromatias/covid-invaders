@@ -626,3 +626,8 @@
 ;(define (add-new-missile x y lom) lom) ; stub
 (define (add-new-missile x y lom)
   (cons (make-missile x y) lom))
+
+;; Start the game!
+;http://reference-error.org/2014/02/24/loading-main-function-in-racket.html
+;(define (main)
+;  (make-game empty empty T0))
