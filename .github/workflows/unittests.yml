@@ -36,3 +36,5 @@ jobs:
         run: raco pkg install --auto --batch threading
       - name: Run tests with rackunit
         run: raco test space-invaders-test.rkt
+        env:
+          DISPLAY: ':0.0'
