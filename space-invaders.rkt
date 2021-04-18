@@ -11,6 +11,10 @@
 ;; Space Invaders
 ;;; Start the game with (main (make-game empty empty T0))
 
+;; TODO
+;; !!! add score and show in game over
+;; !!! add explosions
+;; !!! add motion
 
 ;; Constants:
 
@@ -162,7 +166,8 @@
     (on-tick   advance-game-state)                              ; Game -> Game
     (to-draw   render-game)                                     ; Game -> Image
     (stop-when terminate-game? (λ (_)  GAME-OVER-IMAGE))        ; Game -> Boolean
-    (on-key    control-game)))                                  ; Game KeyEvent -> Game
+    (on-key    control-game)                                    ; Game KeyEvent -> Game
+    (name      "Covid invaders")))                              
 
 
 
@@ -627,7 +632,6 @@
 (define (add-new-missile x y lom)
   (cons (make-missile x y) lom))
 
-;; Start the game!
-;http://reference-error.org/2014/02/24/loading-main-function-in-racket.html
-;(define (main)
-;  (make-game empty empty T0))
+
+(module+ main
+  (main (make-game empty empty T0)))
