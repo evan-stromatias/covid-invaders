@@ -58,6 +58,8 @@
                                             (above (rectangle 10 12 "solid" "black")
                                                    (rectangle 28 4 "solid" "black")))))))))
 
+(define GAME-OVER-IMAGE (place-image (text "Game\n Over" 36 "Light Goldenrod") (/ WIDTH 2) (/ HEIGHT 2)
+                                     (place-image (scale/xy 8 8 INVADER) (/ WIDTH 2) (/ HEIGHT 2) BACKGROUND)))
 
 (define INVADER-WIDTH/2 (/ (image-width INVADER) 2))
 
@@ -156,14 +158,11 @@
 ;; Game -> Game
 ;; start the world with (main (make-game empty empty T0))
 (define (main game)
-  (big-bang    game                    ; Game
-    (on-tick   advance-game-state)     ; Game -> Game
-    (to-draw   render-game)            ; Game -> Image
-    (stop-when terminate-game?)        ; Game -> Boolean
-    (on-key    control-game)))         ; Game KeyEvent -> Game
-
-
-
+  (big-bang    game                                             ; Game
+    (on-tick   advance-game-state)                              ; Game -> Game
+    (to-draw   render-game)                                     ; Game -> Image
+    (stop-when terminate-game? (λ (_)  GAME-OVER-IMAGE))        ; Game -> Boolean
+    (on-key    control-game)))                                  ; Game KeyEvent -> Game
 
 
 
@@ -174,6 +173,7 @@
   (make-game (game-invaders game)
              (game-missiles game)
              (advance-tank (game-tank game))))
+
 
 
 ;; Tank -> Tank
