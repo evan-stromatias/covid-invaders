@@ -3,7 +3,7 @@
 (require 2htdp/image)
 
 (require rackunit "constants.rkt")
-(require rackunit "space-invaders.rkt")
+(require rackunit "covid-invaders.rkt")
 
 ;; https://stackoverflow.com/questions/43072656/typed-racket-error-with-check-random
 (define (run-with-seed thunk seed)
