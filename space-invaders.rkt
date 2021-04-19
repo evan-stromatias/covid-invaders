@@ -3,97 +3,18 @@
 (require 2htdp/universe)
 (require 2htdp/image)
 (require threading)
+(require rackunit "constants.rkt")
 
-(provide
- (all-defined-out))
+(provide (all-defined-out))
 
 
-;; Space Invaders
-;;; Start the game with (main (make-game empty empty T0))
-
-;; TODO
-;; !!! add score and show in game over
-;; !!! add explosions
-;; !!! add motion
-
-;; Constants:
-
-(define WIDTH  300)
-(define HEIGHT 500)
-
-(define INVADER-X-SPEED 1.5)  ;speeds (not velocities) in pixels per tick
-(define INVADER-Y-SPEED 1.5)
-(define INVADER-DX 1)
-
-(define TANK-SPEED 2)
-(define MISSILE-SPEED 10)
-
-(define HIT-RANGE 10)
-
-(define INVADE-RATE 100)
-(define INVADE-RATE-ADJUSTED (/ (sqr INVADE-RATE) 2)) ; From here: https://courses.edx.org/courses/course-v1:UBCx+HtC1x+2T2017/discussion/forum/v1-UBCx-SPD1x-2T2016-general/threads/597f195d3662b7096c000153
-
-(define BACKGROUND (empty-scene WIDTH HEIGHT))
-
-; spike
-(define SPIKE1 (overlay/offset (ellipse 6 3 "solid" "darkred") 0 5
-                               (rectangle 2 10 "solid" "darkred")))
-(define BODY (circle 10 "solid" "darkred"))
-
-(define INVADER
-  (overlay/offset (rotate 50 (flip-vertical SPIKE1)) -8 -6
-                  (overlay/offset (rotate -55 (flip-vertical SPIKE1)) 8 -6
-                                  (overlay/offset (rotate -3 (flip-vertical SPIKE1)) 1 -12
-                                                  (overlay/offset (rotate 65 SPIKE1) 10 0
-                                                                  (overlay/offset (rotate -65 SPIKE1) -8 0
-                                                                                  (overlay/offset (rotate 35 SPIKE1) 7 5
-                                                                                                  (overlay/offset (rotate -35 SPIKE1) -7 5
-                                                                                                                  (overlay/offset (rotate -3 SPIKE1) -1 10 BODY)))))))))
-
-(define TANK
-  (above (rectangle 1 15 "solid" "black")
-         (above (rectangle 5 5 "solid" "black")
-                (above (rectangle 17 2 "outline" "black")
-                       (above (rectangle 18 12 "solid" "black")
-                              (above (overlay/xy (rectangle 9 2 "solid" "black") -9 -4
-                                                 (overlay/xy (rectangle 8 2 "solid" "black") -10 -9
-                                                             (overlay/xy (rectangle 5 2 "solid" "black") -12 -14 (rectangle 17 20 "outline" "black"))))
-                                     (above (rectangle 32 4 "solid" "black")
-                                            (above (rectangle 10 12 "solid" "black")
-                                                   (rectangle 28 4 "solid" "black")))))))))
-
-(define GAME-OVER-IMAGE (place-image (text "Game\n Over" 36 "Light Goldenrod") (/ WIDTH 2) (/ HEIGHT 2)
-                                     (place-image (scale/xy 8 8 INVADER) (/ WIDTH 2) (/ HEIGHT 2) BACKGROUND)))
-
-(define INVADER-WIDTH/2 (/ (image-width INVADER) 2))
-
-(define INVADER-HEIGHT/2 (/ (image-height INVADER) 2))
-
-(define INVADER-LANDING-HEIGHT (- HEIGHT INVADER-HEIGHT/2))
-
-(define TANK-HEIGHT (image-height TANK))
-
-(define TANK-HEIGHT/2 (/ TANK-HEIGHT 2))
-
-(define TANK-WIDTH/2 (/ (image-width TANK) 2))
-
-(define TANK-Y (- HEIGHT TANK-HEIGHT/2))
-
-(define MISSILE (ellipse 5 15 "solid" "red"))
-
-(define MISSILE-HEIGHT/2 (/ (image-height MISSILE) 2))
-
-(define MISSILE-WIDTH/2 (/ (image-width MISSILE) 2))
-
-(define MISSILE-OUTSIDE-OF-SCREEN-Y 0) ; missiles above this value will be removed from the Game
-
-(define TANK-MISSILE-LAUNCHER-Y (- (- HEIGHT TANK-HEIGHT) MISSILE-HEIGHT/2))
+;; Covid Invaders
 
 
 ;; Data Definitions:
 
-(define-struct game (invaders missiles tank) #:transparent)
-;; Game is (make-game  (listof Invader) (listof Missile) Tank)
+(define-struct game (invaders missiles tank score) #:transparent)
+;; Game is (make-game  (listof Invader) (listof Missile) Tank Score)
 ;; interp. the current state of a space invaders game
 ;;         with the current invaders, missiles and tank position
 
@@ -103,8 +24,22 @@
 (define (fn-for-game s)
   (... (fn-for-loinvader (game-invaders s))
        (fn-for-lom (game-missiles s))
-       (fn-for-tank (game-tank s))))
+       (fn-for-tank (game-tank s))
+       (fn-for-score (game-score s))))
 
+
+;; Score is Natural[0, +inf]
+;; interp. score increases every time a missile hits a covid invader
+(define SC1 0)    ; No invaders were shot
+(define SC2 1)    ; 1 invader has been shot
+(define SC3 100)  ; 100 invaders were shot
+
+#;
+(define (fn-for-score sc)
+  (... sc))
+
+;; Template rules used:
+;;  - atomic non-distinct: Integer[0, +inf]
 
 
 (define-struct tank (x dir) #:transparent)
@@ -151,10 +86,10 @@
 
 
 
-(define G0 (make-game empty empty T0))
-(define G1 (make-game empty empty T1))
-(define G2 (make-game (list I1) (list M1) T1))
-(define G3 (make-game (list I1 I2) (list M1 M2) T1))
+(define G0 (make-game empty empty T0 0))
+(define G1 (make-game empty empty T1 0))
+(define G2 (make-game (list I1) (list M1) T1 0))
+(define G3 (make-game (list I1 I2) (list M1 M2) T1 0))
 
 ;; ===============
 ;; Functions:
@@ -165,9 +100,61 @@
   (big-bang    game                                             ; Game
     (on-tick   advance-game-state)                              ; Game -> Game
     (to-draw   render-game)                                     ; Game -> Image
-    (stop-when terminate-game? (λ (_)  GAME-OVER-IMAGE))        ; Game -> Boolean
+    (stop-when terminate-game? render-game-over)                ; Game -> Boolean, Image
     (on-key    control-game)                                    ; Game KeyEvent -> Game
     (name      "Covid invaders")))                              
+
+
+
+;; Game -> Game
+;; Produce the next game state by updating the tank, missiles (removing them if out of screen or hit an invader), moving and spawning new invaders
+;(define (advance-game-state game) game) ; stub
+(define (advance-game-state game)
+  (~>> game
+      advance-game-tank
+      advance-game-missiles
+      filter-game-missiles
+      explode-game-objects
+      advance-game-invaders
+      spawn-new-game-invaders
+      (update-game-score game)))
+
+
+;; Game Game -> Game
+;; Computes game score based on the previous game state and the new one 
+;(define (update-game-score old-game-state new-game-state) new-game-state) ; stub
+(define (update-game-score old-game-state new-game-state)
+  (make-game (game-invaders new-game-state)
+             (game-missiles new-game-state)
+             (game-tank new-game-state)
+             (advance-game-score new-game-state old-game-state)))
+
+
+
+;; Game Game -> Game
+;; Computes the new game score based on the previous game state and the new one 
+;(define (advance-game-score new-game-state old-game-state) 0) ;stub
+(define (advance-game-score new-game-state old-game-state)
+  (+ (game-score old-game-state)
+         (number-of-invaders-killed new-game-state old-game-state)))
+
+
+
+;; Game Game -> Boolean
+;; Returns True if invaders have been killed
+;(define (have-invaders-been-killed? new-game-state old-game-state) false) ; stub
+(define (have-invaders-been-killed? new-game-state old-game-state)
+  (< (- (length (game-invaders new-game-state)) (length (game-invaders old-game-state))) 0))
+
+
+
+;; Game Game -> Score
+;; Returns the new game score based on the number of invaders in the new game state and the old game state
+;(define (number-of-invaders-killed  new-game-state old-game-state) 0) ; stub
+(define (number-of-invaders-killed  new-game-state old-game-state)
+  (if (have-invaders-been-killed? new-game-state old-game-state)
+      (abs (- (length (game-invaders new-game-state)) (length (game-invaders old-game-state))))
+      0))
 
 
 
@@ -177,7 +164,8 @@
 (define (advance-game-tank game)
   (make-game (game-invaders game)
              (game-missiles game)
-             (advance-tank (game-tank game))))
+             (advance-tank (game-tank game))
+             (game-score game)))
 
 
 
@@ -215,7 +203,8 @@
 (define (advance-game-missiles game)
   (make-game (game-invaders game)
              (advance-missiles (game-missiles game))
-             (game-tank game)))
+             (game-tank game)
+             (game-score game)))
 
 
 
@@ -244,7 +233,8 @@
 (define (filter-game-missiles game)
   (make-game (game-invaders game)
              (filter-missiles (game-missiles game))
-             (game-tank game)))
+             (game-tank game)
+             (game-score game)))
 
 
 
@@ -274,7 +264,8 @@
 (define (explode-game-objects game)
   (make-game (explode-game-invaders game)                
              (explode-game-missiles game)
-             (game-tank game)))
+             (game-tank game)
+             (game-score game)))
 
 
 
@@ -369,7 +360,8 @@
 (define (spawn-new-game-invaders game)
   (make-game (spawn-new-invader-randomly (game-invaders game))                
              (game-missiles game)
-             (game-tank game)))
+             (game-tank game)
+             (game-score game)))
 
 
 
@@ -388,7 +380,8 @@
 (define (advance-game-invaders game)
   (make-game (advance-invaders (game-invaders game))                
              (game-missiles game)
-             (game-tank game)))
+             (game-tank game)
+             (game-score game)))
 
 
 
@@ -497,17 +490,12 @@
 (define (next-x-for-invader inv)
   (next-x-for-invader-with-custom-dx inv (invader-dx inv)))
 
-;; Game -> Game
-;; Produce the next game state by updating the tank, missiles (removing them if out of screen or hit an invader), moving and spawning new invaders
-;(define (advance-game-state game) game) ; stub
-(define (advance-game-state game)
-  (~> game
-      advance-game-tank
-      advance-game-missiles
-      filter-game-missiles
-      explode-game-objects
-      advance-game-invaders
-      spawn-new-game-invaders))
+
+;; Game -> Image
+;; Render game over image with score
+;; !!!
+(define (render-game-over game)
+  (place-image (text (format "Score: ~v" (game-score game)) 36 "black") (/ WIDTH 2) (/ HEIGHT 5) GAME-OVER-IMAGE))
 
 ;; Game -> Image
 ;; Render the game state to an image
@@ -612,7 +600,8 @@
 (define (update-tank-direction game new-dir)
   (make-game (game-invaders game)
              (game-missiles game)
-             (make-tank (tank-x (game-tank game)) new-dir)))
+             (make-tank (tank-x (game-tank game)) new-dir)
+             (game-score game)))
 
 
 
@@ -622,7 +611,8 @@
 (define (fire-missile game)
   (make-game (game-invaders game)
              (add-new-missile (tank-x (game-tank game)) TANK-MISSILE-LAUNCHER-Y (game-missiles game))
-             (game-tank game)))
+             (game-tank game)
+             (game-score game)))
 
 
 
@@ -634,4 +624,4 @@
 
 
 (module+ main
-  (main (make-game empty empty T0)))
+  (main (make-game empty empty T0 0)))
