@@ -38,5 +38,5 @@ jobs:
         uses: GabrielBB/xvfb-action@v1
         with:
           working-directory: ./ #optional
-          run: raco test space-invaders-test.rkt
+          run: raco test covid-invaders-test.rkt
   
