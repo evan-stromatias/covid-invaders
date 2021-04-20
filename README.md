@@ -13,6 +13,7 @@ Press left, right to move the vaccine and space to fire a shot ;) When a virus h
 
 ### Build from scratch
 Build dependencies with `raco pkg install`
+
 Then run `raco exe --ico icons/logo_ico.ico --icns icons/logo_ico.icns --gui covid-invaders.rkt` to generate an executable for you.
 
 ### Run with Racket
