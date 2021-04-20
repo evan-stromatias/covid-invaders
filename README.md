@@ -12,7 +12,8 @@ I changed the code a bit to make it work with Racket instead of the Beginning St
 Press left, right to move the vaccine and space to fire a shot ;) When a virus hits the ground it's game over amigo.
 
 ### Build from scratch
-Running `raco exe --ico icons/logo_ico.ico --icns icons/logo_ico.icns --gui covid-invaders.rkt` will generate an executable for you.
+Build dependencies with `raco pkg install`
+Then run `raco exe --ico icons/logo_ico.ico --icns icons/logo_ico.icns --gui covid-invaders.rkt` to generate an executable for you.
 
 ### Run with Racket
 Execute `racket covid-invaders.rkt` from the command line.
