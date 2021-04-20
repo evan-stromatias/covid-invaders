@@ -77,3 +77,15 @@
 
 (define TANK-MISSILE-LAUNCHER-Y (- (- HEIGHT TANK-HEIGHT) MISSILE-HEIGHT/2))
 
+
+;;; Project icons
+;; (save-svg-image LOGO-IMG "logo.svg") or (save-image LOGO-IMG "/Users/evan/Programming/Racket/git_projects/logo.png")
+(define LOGO-WIDTH 640)
+(define LOGO-HEIGHT 640)
+(define LOGO-WIDTH/2 (/ LOGO-WIDTH 2))
+(define LOGO-HEIGHT/2 (/ LOGO-HEIGHT 2))
+(define LOGO-BACKGROUND (rectangle LOGO-WIDTH LOGO-HEIGHT "outline" "black"))
+(define LOGO-IMG (place-image (rotate -45 (scale/xy 2 2 TANK)) LOGO-WIDTH/2 LOGO-HEIGHT/2
+                              (place-image (rotate 45 (scale/xy 2 2 TANK)) LOGO-WIDTH/2 LOGO-HEIGHT/2
+                                           (place-image (scale/xy 16 16 INVADER) LOGO-WIDTH/2 LOGO-HEIGHT/2 LOGO-BACKGROUND))))
+
